@@ -342,7 +342,13 @@ EOM \
 	
 	@if ! command -v az &> /dev/null; then \
 		echo "$(YELLOW)Installing Azure CLI...$(RESET)"; \
-		curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash; \
+		sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
+		sudo sh -c 'echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo' && \
+		sudo yum install -y azure-cli; \
+		echo "$(GREEN)Azure CLI installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Run 'az login' to authenticate with Azure$(RESET)"; \
+	else \
+		echo "$(GREEN)Azure CLI is already installed.$(RESET)"; \
 	fi
 	
 	@if ! command -v minikube &> /dev/null; then \
@@ -679,8 +685,11 @@ gcloud:
 azure:
 	@if ! command -v az &> /dev/null; then \
 		echo "$(YELLOW)Installing Azure CLI...$(RESET)"; \
-		curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash; \
+		sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc && \
+		sudo sh -c 'echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo' && \
+		sudo yum install -y azure-cli; \
 		echo "$(GREEN)Azure CLI installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Run 'az login' to authenticate with Azure$(RESET)"; \
 	else \
 		echo "$(GREEN)Azure CLI is already installed.$(RESET)"; \
 	fi
