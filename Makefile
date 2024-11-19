@@ -373,7 +373,16 @@ EOM \
 	
 	@if ! command -v ansible &> /dev/null; then \
 		echo "$(YELLOW)Installing Ansible...$(RESET)"; \
-		sudo amazon-linux-extras install -y ansible2; \
+		sudo amazon-linux-extras enable ansible2 && \
+		sudo yum clean metadata && \
+		sudo yum install -y ansible && \
+		echo "$(GREEN)Ansible installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Ansible version:$(RESET)"; \
+		ansible --version; \
+	else \
+		echo "$(GREEN)Ansible is already installed.$(RESET)"; \
+		echo "$(YELLOW)Ansible version:$(RESET)"; \
+		ansible --version; \
 	fi
 	
 	@if ! command -v python3 &> /dev/null; then \
@@ -719,7 +728,16 @@ kind:
 ansible:
 	@if ! command -v ansible &> /dev/null; then \
 		echo "$(YELLOW)Installing Ansible...$(RESET)"; \
-		sudo amazon-linux-extras install -y ansible2; \
+		sudo amazon-linux-extras enable ansible2 && \
+		sudo yum clean metadata && \
+		sudo yum install -y ansible && \
+		echo "$(GREEN)Ansible installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Ansible version:$(RESET)"; \
+		ansible --version; \
+	else \
+		echo "$(GREEN)Ansible is already installed.$(RESET)"; \
+		echo "$(YELLOW)Ansible version:$(RESET)"; \
+		ansible --version; \
 	fi
 terraform:
 	@if ! command -v terraform &> /dev/null; then \
