@@ -33,6 +33,24 @@ A powerful Makefile-based toolkit for automating DevOps tool installation on Ama
 - Internet connection
 - Basic command line knowledge
 
+### Required Dependencies
+
+Before using this toolkit, you need to install some basic dependencies. Run these commands:
+
+```bash
+# Update system packages
+sudo yum update -y
+
+# Install make
+sudo yum install -y make
+
+# Install unzip (required for some installations)
+sudo yum install -y unzip
+
+# Install git (to clone the repository)
+sudo yum install -y git
+```
+
 ## 📥 Installation
 
 1. Clone the repository:
