@@ -392,7 +392,32 @@ install_all:
 	
 	@if ! command -v kubeadm &> /dev/null; then \
 		echo "$(YELLOW)Installing Kubeadm...$(RESET)"; \
-		sudo yum install -y kubeadm; \
+		# Add Kubernetes repository \
+		cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo \
+[kubernetes] \
+name=Kubernetes \
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64 \
+enabled=1 \
+gpgcheck=1 \
+repo_gpgcheck=1 \
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg \
+EOF \
+		# Set SELinux in permissive mode \
+		sudo setenforce 0; \
+		sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config; \
+		# Install kubeadm, kubelet, and kubectl \
+		sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes; \
+		# Enable and start kubelet service \
+		sudo systemctl enable --now kubelet; \
+		echo "$(GREEN)Kubeadm installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Kubeadm version:$(RESET)"; \
+		kubeadm version; \
+		echo "$(YELLOW)Note: You may need to disable swap and configure network settings.$(RESET)"; \
+		echo "$(YELLOW)Run 'sudo swapoff -a' to disable swap.$(RESET)"; \
+	else \
+		echo "$(GREEN)Kubeadm is already installed.$(RESET)"; \
+		echo "$(YELLOW)Kubeadm version:$(RESET)"; \
+		kubeadm version; \
 	fi
 	
 	@if ! command -v prometheus &> /dev/null; then \
@@ -768,7 +793,32 @@ nvm:
 kubeadm:
 	@if ! command -v kubeadm &> /dev/null; then \
 		echo "$(YELLOW)Installing Kubeadm...$(RESET)"; \
-		sudo yum install -y kubeadm; \
+		# Add Kubernetes repository \
+		cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo \
+[kubernetes] \
+name=Kubernetes \
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64 \
+enabled=1 \
+gpgcheck=1 \
+repo_gpgcheck=1 \
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg \
+EOF \
+		# Set SELinux in permissive mode \
+		sudo setenforce 0; \
+		sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config; \
+		# Install kubeadm, kubelet, and kubectl \
+		sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes; \
+		# Enable and start kubelet service \
+		sudo systemctl enable --now kubelet; \
+		echo "$(GREEN)Kubeadm installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Kubeadm version:$(RESET)"; \
+		kubeadm version; \
+		echo "$(YELLOW)Note: You may need to disable swap and configure network settings.$(RESET)"; \
+		echo "$(YELLOW)Run 'sudo swapoff -a' to disable swap.$(RESET)"; \
+	else \
+		echo "$(GREEN)Kubeadm is already installed.$(RESET)"; \
+		echo "$(YELLOW)Kubeadm version:$(RESET)"; \
+		kubeadm version; \
 	fi
 
 prometheus:
