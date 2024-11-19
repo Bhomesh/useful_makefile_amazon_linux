@@ -324,18 +324,8 @@ install_all:
 	
 	@if ! command -v gcloud &> /dev/null; then \
 		echo "$(YELLOW)Installing Google Cloud SDK...$(RESET)"; \
-		sudo tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM \
-[google-cloud-cli] \
-name=Google Cloud CLI \
-baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el7-x86_64 \
-enabled=1 \
-gpgcheck=1 \
-repo_gpgcheck=0 \
-gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg \
-EOM \
-		&& sudo yum -y install google-cloud-sdk; \
+		sudo yum install -y google-cloud-sdk; \
 		echo "$(GREEN)Google Cloud SDK installed successfully.$(RESET)"; \
-		echo "$(YELLOW)Run 'gcloud init' to initialize the SDK$(RESET)"; \
 	else \
 		echo "$(GREEN)Google Cloud SDK is already installed.$(RESET)"; \
 	fi
@@ -346,7 +336,6 @@ EOM \
 		sudo sh -c 'echo -e "[azure-cli]\nname=Azure CLI\nbaseurl=https://packages.microsoft.com/yumrepos/azure-cli\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azure-cli.repo' && \
 		sudo yum install -y azure-cli; \
 		echo "$(GREEN)Azure CLI installed successfully.$(RESET)"; \
-		echo "$(YELLOW)Run 'az login' to authenticate with Azure$(RESET)"; \
 	else \
 		echo "$(GREEN)Azure CLI is already installed.$(RESET)"; \
 	fi
@@ -373,12 +362,13 @@ EOM \
 	
 	@if ! command -v ansible &> /dev/null; then \
 		echo "$(YELLOW)Installing Ansible...$(RESET)"; \
-		sudo amazon-linux-extras enable ansible2 && \
-		sudo yum clean metadata && \
-		sudo yum install -y ansible && \
+		sudo yum update -y && \
+		sudo yum install -y python3-pip && \
+		sudo pip3 install ansible && \
 		echo "$(GREEN)Ansible installed successfully.$(RESET)"; \
 		echo "$(YELLOW)Ansible version:$(RESET)"; \
 		ansible --version; \
+		echo "$(YELLOW)To verify installation, run: ansible --version$(RESET)"; \
 	else \
 		echo "$(GREEN)Ansible is already installed.$(RESET)"; \
 		echo "$(YELLOW)Ansible version:$(RESET)"; \
@@ -728,12 +718,13 @@ kind:
 ansible:
 	@if ! command -v ansible &> /dev/null; then \
 		echo "$(YELLOW)Installing Ansible...$(RESET)"; \
-		sudo amazon-linux-extras enable ansible2 && \
-		sudo yum clean metadata && \
-		sudo yum install -y ansible && \
+		sudo yum update -y && \
+		sudo yum install -y python3-pip && \
+		sudo pip3 install ansible && \
 		echo "$(GREEN)Ansible installed successfully.$(RESET)"; \
 		echo "$(YELLOW)Ansible version:$(RESET)"; \
 		ansible --version; \
+		echo "$(YELLOW)To verify installation, run: ansible --version$(RESET)"; \
 	else \
 		echo "$(GREEN)Ansible is already installed.$(RESET)"; \
 		echo "$(YELLOW)Ansible version:$(RESET)"; \
