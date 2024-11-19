@@ -422,22 +422,76 @@ EOF \
 	
 	@if ! command -v prometheus &> /dev/null; then \
 		echo "$(YELLOW)Installing Prometheus...$(RESET)"; \
-		sudo yum install -y prometheus; \
+		sudo useradd --no-create-home --shell /bin/false prometheus && \
+		sudo mkdir /etc/prometheus && \
+		sudo mkdir /var/lib/prometheus && \
+		cd /tmp && \
+		curl -LO https://github.com/prometheus/prometheus/releases/download/v2.37.0/prometheus-2.37.0.linux-amd64.tar.gz && \
+		tar xvf prometheus-2.37.0.linux-amd64.tar.gz && \
+		sudo cp prometheus-2.37.0.linux-amd64/prometheus /usr/local/bin/ && \
+		sudo cp prometheus-2.37.0.linux-amd64/promtool /usr/local/bin/ && \
+		sudo cp -r prometheus-2.37.0.linux-amd64/consoles /etc/prometheus && \
+		sudo cp -r prometheus-2.37.0.linux-amd64/console_libraries /etc/prometheus && \
+		sudo chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus && \
+		rm -rf prometheus-2.37.0.linux-amd64.tar.gz prometheus-2.37.0.linux-amd64 && \
+		echo "$(GREEN)Prometheus installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Configure Prometheus at /etc/prometheus/prometheus.yml$(RESET)"; \
+	else \
+		echo "$(GREEN)Prometheus is already installed.$(RESET)"; \
 	fi
 	
 	@if ! command -v grafana-server &> /dev/null; then \
 		echo "$(YELLOW)Installing Grafana...$(RESET)"; \
-		sudo yum install -y grafana; \
+		sudo tee /etc/yum.repos.d/grafana.repo << EOF \
+[grafana] \
+name=grafana \
+baseurl=https://packages.grafana.com/oss/rpm \
+repo_gpgcheck=1 \
+enabled=1 \
+gpgcheck=1 \
+gpgkey=https://packages.grafana.com/gpg.key \
+sslverify=1 \
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt \
+EOF \
+		sudo yum install -y grafana && \
+		sudo systemctl enable grafana-server && \
+		sudo systemctl start grafana-server && \
+		echo "$(GREEN)Grafana installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Grafana is running at http://localhost:3000$(RESET)"; \
+		echo "$(YELLOW)Default credentials: admin/admin$(RESET)"; \
+	else \
+		echo "$(GREEN)Grafana is already installed.$(RESET)"; \
 	fi
 	
 	@if ! command -v sonar-scanner &> /dev/null; then \
 		echo "$(YELLOW)Installing SonarQube...$(RESET)"; \
-		sudo yum install -y sonar-scanner; \
+		sudo yum install -y java-11-openjdk && \
+		cd /tmp && \
+		wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip && \
+		unzip sonar-scanner-cli-4.7.0.2747-linux.zip && \
+		sudo mv sonar-scanner-4.7.0.2747-linux /opt/sonar-scanner && \
+		sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+		rm sonar-scanner-cli-4.7.0.2747-linux.zip && \
+		echo "$(GREEN)SonarQube Scanner installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Configure SonarQube server settings in /opt/sonar-scanner/conf/sonar-scanner.properties$(RESET)"; \
+	else \
+		echo "$(GREEN)SonarQube Scanner is already installed.$(RESET)"; \
 	fi
 	
 	@if ! command -v jenkins &> /dev/null; then \
 		echo "$(YELLOW)Installing Jenkins...$(RESET)"; \
-		sudo yum install -y jenkins; \
+		sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
+		sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key && \
+		sudo yum install -y java-11-openjdk-devel && \
+		sudo yum install -y jenkins && \
+		sudo systemctl enable jenkins && \
+		sudo systemctl start jenkins && \
+		echo "$(GREEN)Jenkins installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Jenkins is running at http://localhost:8080$(RESET)"; \
+		echo "$(YELLOW)Initial admin password: $(RESET)"; \
+		sudo cat /var/lib/jenkins/secrets/initialAdminPassword; \
+	else \
+		echo "$(GREEN)Jenkins is already installed.$(RESET)"; \
 	fi
 	
 	@if ! command -v java &> /dev/null || ! command -v javac &> /dev/null; then \
@@ -460,11 +514,25 @@ EOF \
 		echo "$(YELLOW)Installing Node.js...$(RESET)"; \
 		curl -sL https://rpm.nodesource.com/setup_lts.x | sudo bash - && \
 		sudo yum install -y nodejs; \
+		echo "$(GREEN)Node.js installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Node.js version:$(RESET)"; \
+		node --version; \
+	else \
+		echo "$(GREEN)Node.js is already installed.$(RESET)"; \
+		echo "$(YELLOW)Node.js version:$(RESET)"; \
+		node --version; \
 	fi
 	
 	@if ! command -v npm &> /dev/null; then \
 		echo "$(YELLOW)Installing NPM...$(RESET)"; \
 		sudo yum install -y npm; \
+		echo "$(GREEN)NPM installed successfully.$(RESET)"; \
+		echo "$(YELLOW)NPM version:$(RESET)"; \
+		npm --version; \
+	else \
+		echo "$(GREEN)NPM is already installed.$(RESET)"; \
+		echo "$(YELLOW)NPM version:$(RESET)"; \
+		npm --version; \
 	fi
 	
 	@if ! command -v codeclimate &> /dev/null; then \
@@ -474,6 +542,10 @@ EOF \
 		sudo make install && \
 		cd .. && rm -rf codeclimate-master && \
 			sudo codeclimate engines:install; \
+		echo "$(GREEN)CodeClimate installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Run 'codeclimate help' for usage information$(RESET)"; \
+	else \
+		echo "$(GREEN)CodeClimate is already installed.$(RESET)"; \
 	fi
 	
 	@if ! command -v helm &> /dev/null; then \
@@ -484,6 +556,10 @@ EOF \
 	@if ! command -v glasscube &> /dev/null; then \
 		echo "$(YELLOW)Installing Glasscube...$(RESET)"; \
 		curl -fsSL https://raw.githubusercontent.com/glasscube/glasscube/main/install.sh | sudo bash; \
+		echo "$(GREEN)Glasscube installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Run 'glasscube --help' for usage information$(RESET)"; \
+	else \
+		echo "$(GREEN)Glasscube is already installed.$(RESET)"; \
 	fi
 	
 	@if ! command -v mysql &> /dev/null; then \
@@ -526,10 +602,17 @@ EOF \
 	
 	@if ! command -v mongod &> /dev/null; then \
 		echo "$(YELLOW)Installing MongoDB...$(RESET)"; \
-		sudo yum install -y mongodb-org; \
+		echo "[mongodb-org-6.0]" | sudo tee /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "name=MongoDB Repository" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "baseurl=https://repo.mongodb.org/yum/amazon/2/mongodb-org/6.0/x86_64/" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "gpgcheck=1" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "enabled=1" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		sudo yum install -y mongodb-org && \
 		sudo systemctl enable mongod && \
-		sudo systemctl start mongod; \
+		sudo systemctl start mongod && \
 		echo "$(GREEN)MongoDB installed successfully.$(RESET)"; \
+		echo "$(YELLOW)MongoDB is running at localhost:27017$(RESET)"; \
 	else \
 		echo "$(GREEN)MongoDB is already installed.$(RESET)"; \
 	fi
@@ -589,9 +672,13 @@ EOF \
 	
 	@if ! command -v mongodb-compass &> /dev/null; then \
 		echo "$(YELLOW)Installing MongoDB Compass...$(RESET)"; \
-		wget https://downloads.mongodb.com/compass/mongodb-compass_1.40.4_amd64.deb && \
-		sudo dpkg -i mongodb-compass_1.40.4_amd64.deb && \
-		rm mongodb-compass_1.40.4_amd64.deb; \
+		wget https://downloads.mongodb.com/compass/mongodb-compass-1.40.4.x86_64.rpm && \
+		sudo yum install -y mongodb-compass-1.40.4.x86_64.rpm && \
+		rm mongodb-compass-1.40.4.x86_64.rpm && \
+		echo "$(GREEN)MongoDB Compass installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Launch MongoDB Compass from your applications menu$(RESET)"; \
+	else \
+		echo "$(GREEN)MongoDB Compass is already installed.$(RESET)"; \
 	fi
 	
 	@echo "$(GREEN)All tools have been checked and installed if necessary.$(RESET)"
@@ -824,25 +911,79 @@ EOF \
 prometheus:
 	@if ! command -v prometheus &> /dev/null; then \
 		echo "$(YELLOW)Installing Prometheus...$(RESET)"; \
-		sudo yum install -y prometheus; \
+		sudo useradd --no-create-home --shell /bin/false prometheus && \
+		sudo mkdir /etc/prometheus && \
+		sudo mkdir /var/lib/prometheus && \
+		cd /tmp && \
+		curl -LO https://github.com/prometheus/prometheus/releases/download/v2.37.0/prometheus-2.37.0.linux-amd64.tar.gz && \
+		tar xvf prometheus-2.37.0.linux-amd64.tar.gz && \
+		sudo cp prometheus-2.37.0.linux-amd64/prometheus /usr/local/bin/ && \
+		sudo cp prometheus-2.37.0.linux-amd64/promtool /usr/local/bin/ && \
+		sudo cp -r prometheus-2.37.0.linux-amd64/consoles /etc/prometheus && \
+		sudo cp -r prometheus-2.37.0.linux-amd64/console_libraries /etc/prometheus && \
+		sudo chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus && \
+		rm -rf prometheus-2.37.0.linux-amd64.tar.gz prometheus-2.37.0.linux-amd64 && \
+		echo "$(GREEN)Prometheus installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Configure Prometheus at /etc/prometheus/prometheus.yml$(RESET)"; \
+	else \
+		echo "$(GREEN)Prometheus is already installed.$(RESET)"; \
 	fi
 
 grafana:
 	@if ! command -v grafana-server &> /dev/null; then \
 		echo "$(YELLOW)Installing Grafana...$(RESET)"; \
-		sudo yum install -y grafana; \
+		sudo tee /etc/yum.repos.d/grafana.repo << EOF \
+[grafana] \
+name=grafana \
+baseurl=https://packages.grafana.com/oss/rpm \
+repo_gpgcheck=1 \
+enabled=1 \
+gpgcheck=1 \
+gpgkey=https://packages.grafana.com/gpg.key \
+sslverify=1 \
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt \
+EOF \
+		sudo yum install -y grafana && \
+		sudo systemctl enable grafana-server && \
+		sudo systemctl start grafana-server && \
+		echo "$(GREEN)Grafana installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Grafana is running at http://localhost:3000$(RESET)"; \
+		echo "$(YELLOW)Default credentials: admin/admin$(RESET)"; \
+	else \
+		echo "$(GREEN)Grafana is already installed.$(RESET)"; \
 	fi
 
 sonarqube:
 	@if ! command -v sonar-scanner &> /dev/null; then \
 		echo "$(YELLOW)Installing SonarQube...$(RESET)"; \
-		sudo yum install -y sonar-scanner; \
+		sudo yum install -y java-11-openjdk && \
+		cd /tmp && \
+		wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip && \
+		unzip sonar-scanner-cli-4.7.0.2747-linux.zip && \
+		sudo mv sonar-scanner-4.7.0.2747-linux /opt/sonar-scanner && \
+		sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+		rm sonar-scanner-cli-4.7.0.2747-linux.zip && \
+		echo "$(GREEN)SonarQube Scanner installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Configure SonarQube server settings in /opt/sonar-scanner/conf/sonar-scanner.properties$(RESET)"; \
+	else \
+		echo "$(GREEN)SonarQube Scanner is already installed.$(RESET)"; \
 	fi
 
 jenkins:
 	@if ! command -v jenkins &> /dev/null; then \
 		echo "$(YELLOW)Installing Jenkins...$(RESET)"; \
-		sudo yum install -y jenkins; \
+		sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
+		sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key && \
+		sudo yum install -y java-11-openjdk-devel && \
+		sudo yum install -y jenkins && \
+		sudo systemctl enable jenkins && \
+		sudo systemctl start jenkins && \
+		echo "$(GREEN)Jenkins installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Jenkins is running at http://localhost:8080$(RESET)"; \
+		echo "$(YELLOW)Initial admin password: $(RESET)"; \
+		sudo cat /var/lib/jenkins/secrets/initialAdminPassword; \
+	else \
+		echo "$(GREEN)Jenkins is already installed.$(RESET)"; \
 	fi
 
 java:
@@ -964,10 +1105,17 @@ redis:
 mongodb:
 	@if ! command -v mongod &> /dev/null; then \
 		echo "$(YELLOW)Installing MongoDB...$(RESET)"; \
-		sudo yum install -y mongodb-org; \
+		echo "[mongodb-org-6.0]" | sudo tee /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "name=MongoDB Repository" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "baseurl=https://repo.mongodb.org/yum/amazon/2/mongodb-org/6.0/x86_64/" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "gpgcheck=1" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "enabled=1" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		echo "gpgkey=https://www.mongodb.org/static/pgp/server-6.0.asc" | sudo tee -a /etc/yum.repos.d/mongodb-org-6.0.repo && \
+		sudo yum install -y mongodb-org && \
 		sudo systemctl enable mongod && \
-		sudo systemctl start mongod; \
+		sudo systemctl start mongod && \
 		echo "$(GREEN)MongoDB installed successfully.$(RESET)"; \
+		echo "$(YELLOW)MongoDB is running at localhost:27017$(RESET)"; \
 	else \
 		echo "$(GREEN)MongoDB is already installed.$(RESET)"; \
 	fi
@@ -1034,9 +1182,9 @@ apache:
 mongodb-compass:
 	@if ! command -v mongodb-compass &> /dev/null; then \
 		echo "$(YELLOW)Installing MongoDB Compass...$(RESET)"; \
-		wget https://downloads.mongodb.com/compass/mongodb-compass_1.40.4_amd64.deb && \
-		sudo dpkg -i mongodb-compass_1.40.4_amd64.deb && \
-		rm mongodb-compass_1.40.4_amd64.deb; \
+		wget https://downloads.mongodb.com/compass/mongodb-compass-1.40.4.x86_64.rpm && \
+		sudo yum install -y mongodb-compass-1.40.4.x86_64.rpm && \
+		rm mongodb-compass-1.40.4.x86_64.rpm && \
 		echo "$(GREEN)MongoDB Compass installed successfully.$(RESET)"; \
 		echo "$(YELLOW)Launch MongoDB Compass from your applications menu$(RESET)"; \
 	else \
