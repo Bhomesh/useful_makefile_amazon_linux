@@ -670,18 +670,8 @@ kubectl:
 gcloud:
 	@if ! command -v gcloud &> /dev/null; then \
 		echo "$(YELLOW)Installing Google Cloud SDK...$(RESET)"; \
-		sudo tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM \
-[google-cloud-cli] \
-name=Google Cloud CLI \
-baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el7-x86_64 \
-enabled=1 \
-gpgcheck=1 \
-repo_gpgcheck=0 \
-gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg \
-EOM \
-		&& sudo yum -y install google-cloud-sdk; \
+		sudo yum install -y google-cloud-sdk; \
 		echo "$(GREEN)Google Cloud SDK installed successfully.$(RESET)"; \
-		echo "$(YELLOW)Run 'gcloud init' to initialize the SDK$(RESET)"; \
 	else \
 		echo "$(GREEN)Google Cloud SDK is already installed.$(RESET)"; \
 	fi
